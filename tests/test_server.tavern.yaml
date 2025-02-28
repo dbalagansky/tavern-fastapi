@@ -1,0 +1,177 @@
+---
+test_name: Make sure server has / endpoint
+
+fastapi:
+  app:
+    location: "server:app"
+
+stages:
+  - name:  Make a request to /
+    request:
+      url: "/"
+      method: GET
+    response:
+      status_code: 200
+      headers:
+        content-type: application/json
+      json:
+        message: "I'm OK"
+
+  - name:  Make a request to /state
+    request:
+      url: /state
+      method: GET
+    response:
+      status_code: 200
+      headers:
+        content-type: application/json
+      json:
+        state_var: 42
+
+---
+test_name: Make sure jwt returned has the expected aud value
+
+fastapi:
+  app:
+    location: "server:app"
+
+stages:
+  - &login_request
+    name: login
+    request:
+      url: "/login"
+      json:
+        name: test-user
+        password: correct-password
+      method: POST
+      headers:
+        content-type: application/json
+    response:
+      status_code: 200
+      verify_response_with: &verify_token
+        function: tavern.helpers:validate_jwt
+        extra_kwargs:
+          jwt_key: "token"
+          key: CGQgaG7GYvTcpaQZqosLy4
+          algorithms:
+            - HS256
+          options:
+            verify_signature: true
+            verify_aud: true
+            verify_exp: true
+          audience: testserver
+      headers:
+        content-type: application/json
+      save:
+        $ext:
+          <<: *verify_token
+        json:
+          test_login_token: token
+
+---
+test_name: Make sure server doubles number properly
+
+fastapi:
+  app:
+    location: "server:app"
+
+stages:
+  - &reset_request
+    name: reset database for test
+    request:
+      url: "/reset"
+      method: POST
+    response:
+      status_code: 204
+
+  - *login_request
+
+  - name: post a number
+    request:
+      url: "/numbers"
+      json:
+        name: smallnumber
+        number: 123
+      method: POST
+      headers:
+        content-type: application/json
+        Authorization: "bearer {test_login_token:s}"
+    response:
+      status_code: 201
+      headers:
+        content-type: application/json
+
+  - name: Make sure its in the db
+    request:
+      url: "/numbers"
+      params:
+        name: smallnumber
+      method: GET
+      headers:
+        content-type: application/json
+        Authorization: "bearer {test_login_token:s}"
+    response:
+      status_code: 200
+      json:
+        number: 123
+      headers:
+        content-type: application/json
+
+  - name: double it
+    request:
+      url: "/double"
+      json:
+        name: smallnumber
+      method: POST
+      headers:
+        content-type: application/json
+        Authorization: "bearer {test_login_token:s}"
+    response:
+      status_code: 200
+      json:
+        number: 246
+      headers:
+        content-type: application/json
+
+  - name: Make sure db has been updated properly
+    request:
+      url: "/numbers"
+      params:
+        name: smallnumber
+      method: GET
+      headers:
+        content-type: application/json
+        Authorization: "bearer {test_login_token:s}"
+    response:
+      status_code: 200
+      json:
+        number: 246
+      headers:
+        content-type: application/json
+
+---
+test_name: Check trying to get a number that we didnt post before returns a 404
+
+fastapi:
+  app:
+    location: "server:app"
+
+stages:
+  - *reset_request
+  - *login_request
+
+  - name: double it
+    request:
+      url: "/numbers"
+      params:
+        name: whatnumber
+      method: GET
+      headers:
+        content-type: application/json
+        Authorization: "bearer {test_login_token:s}"
+    response:
+      status_code: 404
+      json:
+        detail: Unknown number
+      headers:
+        content-type: application/json

@@ -1,16 +1,16 @@
 ---
-name: FastApi schemas
-desc: pykwalify schemas for 'fastapi' plugin block
+$schema: "http://json-schema.org/draft-07/schema#"
 
-initialisation:
+title: FastAPI schema
+description: jsonschema for FastAPI connection
+
+properties:
   fastapi:
-    required: false
-    type: map
-    mapping:
+    type: object
+    properties:
       app:
-        required: false
-        type: map
-        mapping:
+        type: object
+        properties:
           location:
-            type: str
+            type: string
             required: false

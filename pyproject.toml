@@ -1,0 +1,103 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Framework :: Pytest",
+    "Programming Language :: Python :: 3",
+    "Topic :: Utilities",
+    "Topic :: Software Development :: Testing",
+    "License :: OSI Approved :: MIT License",
+]
+
+keywords = ["testing", "pytest"]
+
+name = "tavern-fastapi"
+description = "FastAPI plugin for Tavern"
+version = "0.0.3"
+
+dependencies = [
+    "tavern>=2.10.1,<3",
+    "fastapi",
+]
+requires-python = ">=3.8"
+
+[tool.setuptools.package-data]
+tavern_fastapi = ["schema.yaml"]
+
+[[project.authors]]
+name = "Hamed Zaghaghi"
+
+[[project.authors]]
+name = "Michael Boulton"
+
+[[project.authors]]
+name = "Danila Balagansky"
+
+[project.license]
+file = "LICENSE"
+
+[project.readme]
+file = "README.md"
+content-type = "text/markdown"
+
+[project.urls]
+Home = "https://taverntesting.github.io/"
+Documentation = "https://tavern.readthedocs.io/en/latest/"
+Source = "https://github.com/dbalagansky/tavern-fastapi"
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.3.4",
+    "sqlmodel",
+    "pydantic",
+    "fastapi[standard]",
+]
+
+[tool.mypy]
+python_version = 3.8
+
+# See https://mypy.readthedocs.io/en/stable/running_mypy.html#mapping-file-paths-to-modules
+explicit_package_bases = true
+
+exclude = [
+    'venv/',
+]
+
+[tool.ruff]
+target-version = "py38"
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+]
+ignore = [
+    "B008",  # do not perform function calls in argument defaults
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["tavern_fastapi"]
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[project.entry-points.tavern_http]
+fastapi = "tavern_fastapi.tavernhook"
+
+[tool.pytest.ini_options]
+testpaths = ["tavern_fastapi", "tests"]
+tavern-http-backend = "fastapi"
+pythonpath = "tests"
+norecursedirs = [
+    ".git",
+]
